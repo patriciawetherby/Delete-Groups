@@ -1,0 +1,79 @@
+# Script for deleting old MPS groups
+
+$csvPath = "~\Desktop\deletegroups.csv"
+
+$deleteGroups = Import-CSV -Path $csvPath
+
+$logPath = "~\Desktop\logs\deletegroups.log"
+# $deletedGroups = "~\Desktop\logs\deletedgroups.csv"
+
+# Append console output to log file
+
+Start-Transcript -Path $logPath -Append -Force
+
+$counter = 0 # Successful groups counter
+$successfulGroups = [System.Collections.ArrayList]::new()
+$failedGroups = [System.Collections.ArrayList]::new()
+
+foreach ($group in $deletegroups) {
+
+    $groupName = $group.DeleteGroups
+    $counter++
+
+    try{
+
+        Write-Host "Processing $groupName ..." -ForegroundColor Yellow
+    
+        Remove-ADGroup -Identity $groupName -Confirm:$false
+
+        Write-Host "Deleted $groupName" -ForegroundColor Green
+
+        # Add to succesful groups list 
+        $successfulGroups.Add([PSCustomObject]@{
+            
+             DeletedDate = Get-Date            
+             GroupName = $groupName
+             Status = "Success"
+             ErrorMessage = ""
+
+        
+            }) | Out-Null
+
+    }catch{
+        
+        Write-Host "Error deleting group $groupName : $_" -ForegroundColor Red
+
+        # Add to failed groups list
+
+        $failedGroups.Add([PSCustomObject]@{
+        
+            DeletedDate = Get-Date
+            GroupName = $groupName
+            Status = "Failed"
+            ErrorMessage = $_.Exception.Message
+            
+            
+        }) | Out-Null
+    
+    }
+
+}
+
+
+# Display Summary
+
+Write-Host "`n ===SUMMARY===" -ForegroundColor Cyan
+Write-Host "Total groups processed: $counter"
+Write-Host "Successfully deleted: $($successfulGroups.Count)"
+Write-Host "Failed deletions: $($failedGroups.Count)"
+
+
+# Export results to CSV
+
+$allResults = $successfulGroups + $failedGroups
+$allResults | Export-CSV "~\Desktop\logs\deletionlogs.csv" -Append
+
+
+Stop-Transcript
+
+Read-Host "Script completed. Log files saved to ~\Desktop\logs\. Please review changes in AD"
