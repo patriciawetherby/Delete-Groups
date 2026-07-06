@@ -71,7 +71,7 @@ Write-Host "Failed deletions: $($failedGroups.Count)"
 # Export results to CSV
 
 $allResults = $successfulGroups + $failedGroups
-$allResults | Export-CSV "~\Desktop\logs\deletionlogs.csv" -Append
+$allResults | Export-CSV "~\Desktop\logs\deletionlogs.csv" -Append -NoTypeInformation
 
 
 Stop-Transcript
